@@ -274,6 +274,10 @@ function drawClock() {
       break;
     case 'Sun': 
       ring_percent = 100 * (date - sunStart) / sunFull;
+      if (ring_percent > 100) {  // If we're now past a sunrise of sunset
+        updateSunRiseSunSet(date, location.lat, location.lon, true);
+        ring_percent = 100 * (date - sunStart) / sunFull;
+      }
       break;
   }
 
@@ -302,7 +306,7 @@ function drawClock() {
 
   // recalc sunrise / sunset every hour
   if (drawCount % 60 == 0)
-    updateSunRiseSunSet(new Date(), location.lat, location.lon, settings.ring == 'Sun');
+    updateSunRiseSunSet(date, location.lat, location.lon, settings.ring == 'Sun');
   drawCount++;
 }
 
