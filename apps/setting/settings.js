@@ -778,7 +778,7 @@ function clockMenu() {
   var clockApps = storage.list(/\.info$/)
     .map(app => {var a=storage.readJSON(app, 1);return (a&&a.type == "clock")?a:undefined})
     .filter(app => app) // filter out any undefined apps
-    .sort((a, b) => a.sortorder - b.sortorder);
+    .reverse();
   const back = ()=>popMenu(systemMenu());
   const clockMenu = {
     '': {
