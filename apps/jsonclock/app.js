@@ -127,7 +127,7 @@ let getJsonLine = function() {
             min: now.getMinutes(),
             },
         dt: vals.date,
-        "batt_%": vals.batt_pct,
+        "batt": vals.batt_pct,
     };
     if (vals.steps != null) {
         raw.steps = vals.steps;
