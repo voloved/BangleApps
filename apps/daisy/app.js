@@ -435,10 +435,14 @@ function polyArray(start, end, max) {
   return array;
 }
 
-buf = Graphics.createArrayBuffer(w, h, 2, { msb: true });
 function drawRing(start, end, max) {
   const edge = 4;
   const thickness = 6;
+  // Create persistent `buf` inside the function scope
+  if (!drawRing._buf) {
+    drawRing._buf = Graphics.createArrayBuffer(w, h, 2, { msb: true });
+  }
+  const buf = drawRing._buf;
   let img = { width: w, height: h, transparent: 0,
               bpp: 2, palette: pal1, buffer: buf.buffer };
   buf.clear();
@@ -447,7 +451,7 @@ function drawRing(start, end, max) {
   img.palette = pal2;
   g.drawImage(img, 0, 0);  // Draws an unfilled circle
   buf.clear();
-  
+
   buf.setColor(1).fillEllipse(edge,edge,w-edge,h-edge);
   buf.setColor(0).fillEllipse(edge+thickness,edge+thickness,w-edge-thickness,h-edge-thickness);  
   buf.setColor(0).fillPoly(polyArray(start, end, max));
@@ -597,7 +601,6 @@ var drawTimeout;
 function queueDraw() {
   let now = Date.now();
   let delay = settings.ring == 'Seconds' ? sec_update - (now % sec_update) : 60000 - (now % 60000);
-  print(delay);
   if (drawTimeout) clearTimeout(drawTimeout);
   drawTimeout = setTimeout(function() {
     drawTimeout = undefined;
