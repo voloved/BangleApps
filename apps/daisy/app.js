@@ -296,14 +296,14 @@ function drawGaugeImage(date) {
       ring_fill = (hh * 60) + mm;
       ring_max = 1440;
       break;
-    case 'Steps': 
+    case 'Steps':
       ring_fill = getSteps();
       ring_max = settings.step_target;
       break;
-    case 'Battery': 
+    case 'Battery':
       ring_fill = E.getBattery();
       break;
-    case 'Sun': 
+    case 'Sun':
       var dayMin = getMinutesFromDate(date);
       if (dayMin >= sunEnd && dayMin <= night) ring_fill = 100;
       else {
@@ -311,7 +311,7 @@ function drawGaugeImage(date) {
         if (ring_fill > 100) {  // If we're now past a sunrise of sunset
           updateSunRiseSunSet(date, location.lat, location.lon, true);
           ring_fill = 100 * (date - sunStart) / sunFull;
-        } 
+        }
       }
       invertRing = !isDaytime;
       break;
@@ -422,13 +422,13 @@ function polyArray(start, end, max) {
   var array = [g.getHeight()/2, g.getHeight()/2];
   var pt = addPoint(start, max);
   array.push(pt[0], pt[1]);
-  
+
   for (let i = start+1; i < end; i++) {
     if (((i - start)) % 13 < 1) { // Add a point every 8th of the circle
       pt = addPoint(i, max);
       array.push(pt[0], pt[1]);
     }
-  }  
+  }
   pt = addPoint(end, max);
   array.push(pt[0], pt[1]);
   log_debug("Poly Arr: " + array);
@@ -447,13 +447,13 @@ function drawRing(start, end, max) {
               bpp: 2, palette: pal1, buffer: buf.buffer };
   buf.clear();
   buf.setColor(1).fillEllipse(edge,edge,w-edge,h-edge);
-  buf.setColor(0).fillEllipse(edge+thickness,edge+thickness,w-edge-thickness,h-edge-thickness);  
+  buf.setColor(0).fillEllipse(edge+thickness,edge+thickness,w-edge-thickness,h-edge-thickness);
   img.palette = pal2;
   g.drawImage(img, 0, 0);  // Draws an unfilled circle
   buf.clear();
 
   buf.setColor(1).fillEllipse(edge,edge,w-edge,h-edge);
-  buf.setColor(0).fillEllipse(edge+thickness,edge+thickness,w-edge-thickness,h-edge-thickness);  
+  buf.setColor(0).fillEllipse(edge+thickness,edge+thickness,w-edge-thickness,h-edge-thickness);
   buf.setColor(0).fillPoly(polyArray(start, end, max));
   img.palette = pal1;
   g.drawImage(img, 0, 0);  // Draws the filled-in segment
