@@ -3,14 +3,13 @@
 
   // initialize with default settings...
   let s = {'gy' : '#022',
-    'fg' : '#0ff',
-    'color': 'Cyan',
-    'check_idle' : false,
-    'batt_hours' : false,
-    'hourly_buzz' : false,
-    'ring' : 'Sun',
-    'idxInfo' : 0,
-    'step_target' : 10000};
+           'fg' : '#0ff',
+           'color': 'Cyan',
+           'check_idle' : false,
+           'batt_hours' : false,
+           'ring' : 'Sun',
+           'idxInfo' : 0,
+           'step_target' : 10000};
 
 // ...and overwrite them with any saved values
 // This way saved values are preserved if a new version adds more settings
@@ -22,8 +21,8 @@ s[key] = saved[key];
 }
 
 function save() {
-settings = s;
-storage.write(SETTINGS_FILE, settings);
+  settings = s;
+  storage.write(SETTINGS_FILE, settings);
 }
 
 var color_options = ['Cyan','Green','Orange','Purple','Red','Blue'];
@@ -73,14 +72,7 @@ var step_options = [100, 1000, 5000, 10000, 15000, 20000];
           save();
         },
       };
-    } 
-    appMenu['Hourly Buzz'] = {
-      value: !!s.hourly_buzz,
-      onchange: v => {
-        s.hourly_buzz = v;
-        save();
-      },
-    };
+    }
     appMenu['Idle Warning'] = {
       value: !!s.idle_check,
       onchange: v => {

@@ -1,6 +1,8 @@
 var SunCalc = require("suncalc"); // from modules folder
 const storage = require('Storage');
 const widget_utils = require('widget_utils');
+let settings = undefined;
+let location = undefined;
 const SETTINGS_FILE = "daisy.json";
 const global_settings = storage.readJSON("setting.json", true) || {};
 const LOCATION_FILE = "mylocation.json";
@@ -12,7 +14,6 @@ const hyp = Math.sqrt(Math.pow(rad, 2) + Math.pow(rad, 2));
 // variable for controlling idle alert
 let lastStep = getTime();
 let warned = 0;
-let hourly_buzz_occurred = false;
 let idle = false;
 let IDLE_MINUTES = 26;
 
@@ -21,8 +22,11 @@ let pal2; // palette for 50-100%
 const infoLine = (3*h/4) - 6;
 const infoWidth = 56;
 const infoHeight = 11;
-const sec_update = 1000; // This ms between updates when the ring is in Seconds mode
+const ringEdge = 4;
+const ringThick = 6;
+let nextUpdateMs;
 var drawingSteps = false;
+var prevRing = {start: null, end: null, max: null};
 
 function log_debug(o) {
   //print(o);
@@ -89,7 +93,6 @@ function loadSettings() {
   settings.idle_check = (settings.idle_check === undefined ? true : settings.idle_check);
   settings.batt_hours = (settings.batt_hours === undefined ? false : settings.batt_hours);
   settings.hr_12 = (global_settings["12hour"] === undefined ? false : global_settings["12hour"]);
-  settings.hourly_buzz = (settings.hourly_buzz === undefined ? false : settings.hourly_buzz);
   settings.ring = settings.ring||'Steps';
   settings.idxInfo = settings.idxInfo||0;
   settings.step_target = settings.step_target||10000;
@@ -305,24 +308,30 @@ function drawGaugeImage(date) {
       break;
     case 'Sun':
       var dayMin = getMinutesFromDate(date);
-      if (dayMin >= sunEnd && dayMin <= night) ring_fill = 100;
+      if (dayMin >= sunEnd && dayMin <= night) ring_fill = ring_max;
       else {
-        ring_fill = 100 * (date - sunStart) / sunFull;
-        if (ring_fill > 100) {  // If we're now past a sunrise of sunset
+        ring_fill = ring_max * (date - sunStart) / sunFull;
+        if (ring_fill > ring_max) {  // If we're now past a sunrise of sunset
           updateSunRiseSunSet(date, location.lat, location.lon, true);
-          ring_fill = 100 * (date - sunStart) / sunFull;
+          ring_fill = ring_max * (date - sunStart) / sunFull;
         }
       }
       invertRing = !isDaytime;
       break;
   }
   var start = 0;
-  var end = ring_fill;
+  var end = Math.round(ring_fill);
   if (invertRing) {
-    start = 100 - end;
-    end = 100;
+    start = ring_max - end;
+    end = ring_max;
   }
-  drawRing(start, end, ring_max);
+  if (end !== prevRing.end || start !== prevRing.start || ring_max !== prevRing.max) {
+    drawRing(start, end, ring_max);
+    prevRing.start = start;
+    prevRing.end = end;
+    prevRing.max = ring_max;
+    log_debug("Redrew ring at " + hh + ":" + mm);
+  }
   log_debug("Start: "+ start + "  end: " +end);
 }
 
@@ -330,7 +339,6 @@ function drawClock() {
   var date = new Date();
   var hh = date.getHours();
   var mm = date.getMinutes();
-  let min = mm;
   if (settings.hr_12) {
     hh = hh % 12;
     if (hh == 0) hh = 12;
@@ -340,7 +348,7 @@ function drawClock() {
 
   g.reset();
   g.setColor(g.theme.bg);
-  g.fillRect(0, 0, w, h);
+  g.fillEllipse(ringEdge+ringThick,ringEdge+ringThick,w-ringEdge-ringThick,h-ringEdge-ringThick); // Clears the text within the circle
   drawGaugeImage(date);
   setLargeFont();
 
@@ -356,19 +364,10 @@ function drawClock() {
 
   // recalc sunrise / sunset every hour
   if (drawCount % 60 == 0) {
-    let recalcSunLeft = (settings.ring == 'Sun' || settings.hourly_buzz);
+    let recalcSunLeft = (settings.ring == 'Sun');
     updateSunRiseSunSet(date, location.lat, location.lon, recalcSunLeft);
   }
   drawCount++;
-
-  if (settings.hourly_buzz) {
-    if (min != 0)
-      hourly_buzz_occurred = false;
-    else if (!hourly_buzz_occurred && isDaytime) {
-      Bangle.buzz(150);
-      hourly_buzz_occurred = true;
-    }
-  }
 }
 
 function drawSteps() {
@@ -408,26 +407,31 @@ Bangle.on('HRM', function(hrm) {
 /////////////////   GAUGE images /////////////////////////////////////
 
 function addPoint(loc, max) {
-  angle = ((2*Math.PI)/max) * loc;
-  x = hyp * Math.sin(angle);
-  y = hyp * Math.cos(angle + Math.PI);
+  var angle = ((2*Math.PI)/max) * loc;
+  var x = hyp * Math.sin(angle);
+  var y = hyp * Math.cos(angle + Math.PI);
   x += rad;
   y += rad;
   return [Math.round(x),Math.round(y)];
 }
 
 function polyArray(start, end, max) {
+  const eighth = max / 8;
   if (start == end) return []; // No array to draw if the points are the same.
-  if (start > end) end = max - end;
+  let startOrigin = start;
+  let endOrigin = end;
+  start %= max;
+  end %= max;
+  if(start == 0 && startOrigin != 0) start = max;
+  if(end == 0 && endOrigin != 0) end = max;
+  if (start > end) end += max;
   var array = [g.getHeight()/2, g.getHeight()/2];
   var pt = addPoint(start, max);
   array.push(pt[0], pt[1]);
 
-  for (let i = start+1; i < end; i++) {
-    if (((i - start)) % 13 < 1) { // Add a point every 8th of the circle
-      pt = addPoint(i, max);
-      array.push(pt[0], pt[1]);
-    }
+  for (let i = start + eighth; i < end; i += eighth) {
+    pt = addPoint(i, max);
+    array.push(pt[0], pt[1]);
   }
   pt = addPoint(end, max);
   array.push(pt[0], pt[1]);
@@ -436,8 +440,6 @@ function polyArray(start, end, max) {
 }
 
 function drawRing(start, end, max) {
-  const edge = 4;
-  const thickness = 6;
   // Create persistent `buf` inside the function scope
   if (!drawRing._buf) {
     drawRing._buf = Graphics.createArrayBuffer(w, h, 2, { msb: true });
@@ -446,17 +448,17 @@ function drawRing(start, end, max) {
   let img = { width: w, height: h, transparent: 0,
               bpp: 2, palette: pal1, buffer: buf.buffer };
   buf.clear();
-  buf.setColor(1).fillEllipse(edge,edge,w-edge,h-edge);
-  buf.setColor(0).fillEllipse(edge+thickness,edge+thickness,w-edge-thickness,h-edge-thickness);
+  buf.setColor(1).fillEllipse(ringEdge,ringEdge,w-ringEdge,h-ringEdge);
+  buf.setColor(0).fillEllipse(ringEdge+ringThick,ringEdge+ringThick,w-ringEdge-ringThick,h-ringEdge-ringThick);
   img.palette = pal2;
-  g.drawImage(img, 0, 0);  // Draws an unfilled circle
+  g.drawImage(img, 0, 0);  // Draws a filled-in circle
+  if((end - start) >= max) return;  // No need to add the unfilled circle
   buf.clear();
-
-  buf.setColor(1).fillEllipse(edge,edge,w-edge,h-edge);
-  buf.setColor(0).fillEllipse(edge+thickness,edge+thickness,w-edge-thickness,h-edge-thickness);
-  buf.setColor(0).fillPoly(polyArray(start, end, max));
+  buf.setColor(1).fillEllipse(ringEdge,ringEdge,w-ringEdge,h-ringEdge);
+  buf.setColor(0).fillEllipse(ringEdge+ringThick,ringEdge+ringThick,w-ringEdge-ringThick,h-ringEdge-ringThick);
+  buf.setColor(0).fillPoly(polyArray(start, end, max)); // Masks the filled-in part of the segment over the unfilled part
   img.palette = pal1;
-  g.drawImage(img, 0, 0);  // Draws the filled-in segment
+  g.drawImage(img, 0, 0);  // Draws the unfilled-in segment
   return;
 }
 
@@ -592,6 +594,35 @@ function buzzer(n) {
   }, 500);
 }
 
+function getDelayMs(prevDelayMs, ring_setting, now) {
+  // Much of the logic here is for slowing or speeding the delay on the seconds setting.
+  // returns [ms before next update, if only the ring should be updated]
+  const sec_batt = [20, 50];
+  const sec_delay = [10000, 2000, 1000];
+  const deadband = 5;
+  if (ring_setting == 'Seconds') {
+    const nearNextMinute = (now % 60000) >= (60000 - prevDelayMs);
+    if (nearNextMinute) {
+      let batt = E.getBattery();
+      for (let i = 0; i < sec_batt.length; i++) {
+        if (batt <= sec_batt[i])
+          return [sec_delay[i], false];
+      }
+      // Check for coming out of the above states w/ deadband
+      for (let i = 0; i < sec_batt.length; i++) {
+        if (prevDelayMs == sec_delay[i] && batt >= (sec_batt[i] + deadband))
+          return [sec_delay[i + 1], false];
+      }
+      return [sec_delay[sec_delay.length - 1], false];
+    }
+    else {
+      return [prevDelayMs, true];
+    }
+  }
+  else
+    return [60000, false];
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 
 // timeout used to update every minute
@@ -600,13 +631,14 @@ var drawTimeout;
 // schedule a draw for the next minute or every sec_update ms
 function queueDraw() {
   let now = Date.now();
-  let delay = settings.ring == 'Seconds' ? sec_update - (now % sec_update) : 60000 - (now % 60000);
+  var nextUpdateRet = getDelayMs(nextUpdateMs, settings.ring, now);
+  nextUpdateMs = nextUpdateRet[0];
+  let delay = nextUpdateMs - (now % nextUpdateMs);
   if (drawTimeout) clearTimeout(drawTimeout);
   drawTimeout = setTimeout(function() {
     drawTimeout = undefined;
     checkIdle();
-    let updateRingOnly = settings.ring == 'Seconds' && (now % 60000) < 59000;
-    draw(updateRingOnly);
+    draw(nextUpdateRet[1]);
   }, delay);
 }
 
@@ -636,6 +668,7 @@ loadSettings();
 loadLocation();
 var infoMode = infoList[settings.idxInfo];
 updateSunRiseSunSet(new Date(), location.lat, location.lon, true);
+nextUpdateMs = getDelayMs(1000, settings.ring, Date.now())[0];
 
 g.clear();
 Bangle.loadWidgets();
