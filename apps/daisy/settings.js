@@ -32,8 +32,8 @@
 
     s.rings[2] = {
     color: 'Blk/Wht',
-    fg: g.theme.fg,
-    gy: g.theme.fg,
+    fg: null,
+    gy: null,
     ring: 'Hours',
     type: 'C',
     step_target: 10000,
@@ -54,8 +54,8 @@ function save() {
 }
 
   var color_options = ['Cyan','Green','Orange','Purple','Red','Blue', 'Blk/Wht'];
-  var fg_code = ['#0ff','#0f0','#ff0','#f0f','#f00','#00f', g.theme.fg];
-  var gy_code = ['#022','#020','#220','#202','#200','#002', g.theme.fg];
+  var fg_code = ['#0ff','#0f0','#ff0','#f0f','#f00','#00f', null];
+  var gy_code = ['#022','#020','#220','#202','#200','#002', null];
   var ring_options = ['Hours', 'Minutes', 'Seconds', 'Day', 'Sun', 'Steps', 'Battery'];
   var ring_types = ['None', 'Full', 'Semi', 'C'];
   var step_options = [100, 1000, 5000, 10000, 15000, 20000];
