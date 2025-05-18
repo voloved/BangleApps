@@ -30,9 +30,12 @@ const infoHeightDefault = 11;
 const ringEdge = 4;
 const ringIterOffset = 10;
 const ringThick = 6;
+const minStepToUpdate = 10; // In number of steps as a minumum to update the text.
+const minStepPctUpdateRings = 3;  // If the current step is less percent than last updated, don't redraw the rings
 let nextUpdateMs;
 var drawingSteps = false;
 var innerMostRing = 0;
+var prevStepDisplayed = 0;
 var prevRing = Array(3).fill().map(() => ({ start: null, end: null, max: null }));
 
 function log_debug(o) {
@@ -309,7 +312,7 @@ const infoData = {
   ID_DAY:   { calc: () => {var d = require("locale").dow(new Date()).toLowerCase(); return d[0].toUpperCase() + d.substring(1);} },
   ID_SR:    { calc: () => 'SUNRISE ' + sunRise },
   ID_SS:    { calc: () => 'SUNSET ' + sunSet },
-  ID_STEP:  { calc: () => 'STEPS ' + getSteps() },
+  ID_STEP:  { calc: () => {var steps = getSteps(); prevStepDisplayed = steps; return 'STEPS ' + steps;}},
   ID_BATT:  { calc: batteryString},
   ID_HRM:   { calc: () => hrmCurrent }
 };
@@ -373,7 +376,6 @@ function drawInfo() {
   var line = dims[0];
   var height = dims[2];
   if (infoMode == "ID_HRM") {
-    clearInfo();
     g.setColor('#f00'); // red
     drawHeartIcon(line, height);
   } else {
@@ -404,7 +406,7 @@ function draw(updateSeconds) {
   if (!idle) {
     if (updateSeconds) {
       let date  = new Date();
-      drawAllRings(date, updateSeconds);
+      drawAllRings(date, 'Seconds');
     }
     else {
       drawClock();
@@ -439,6 +441,7 @@ function getGaugeImage(date, ringType, step_target) {
       ring_max = 1440;
       break;
     case 'Steps':
+      ring_max = 100;
       ring_fill = getSteps();
       ring_max = step_target;
       break;
@@ -487,11 +490,11 @@ function drawIfChanged(start, end, ring_max, idx, type) {
   log_debug("Redrew ring #" + idx);
 }
 
-function drawAllRings(date, updateSeconds) {
+function drawAllRings(date, drawOnlyThisType) {
   for (let i = 0; i < settings.rings.length; i++) {
     let ring = settings.rings[i];
     if (ring.type == "None") continue;
-    if (ring.ring != "Seconds" && updateSeconds) continue;
+    if (drawOnlyThisType != null && ring.ring != drawOnlyThisType) continue;
     if (ring.type == 'Full' && ring.color == 'Blk/Wht') ring.type = 'Semi';
     result = getGaugeImage(date, ring.ring, ring.step_target);
     drawIfChanged(result[0], result[1], result[2], i, ring.type);
@@ -515,7 +518,7 @@ function drawClock() {
   innerMostRing = getInnerMostRing();
   let edge = ringEdge + (innerMostRing * ringIterOffset);
   g.fillEllipse(edge+ringThick,edge+ringThick,w-edge-ringThick,h-edge-ringThick); // Clears the text within the circle
-  drawAllRings(date, false);
+  drawAllRings(date, null);
   setLargeFont();
 
   g.setColor(settings.fg);
@@ -545,15 +548,31 @@ function drawClock() {
   }
 }
 
+function checkRedrawSteps(steps) {
+  var redrawText = false;
+  var redrawRings = false;
+  if (infoMode == "ID_STEP" && (minStepToUpdate <= (steps - prevStepDisplayed))) {
+    redrawText = true;
+  }
+  for (let i = 0; i < settings.rings.length; i++) {
+    let ring = settings.rings[i];
+    if(ring.type == "None" || ring.ring != 'Steps') continue;
+    let percentChanged = 100 * ((steps - prevRing[i].end) / ring.step_target);
+    if(percentChanged >= minStepPctUpdateRings) {
+      redrawRings = true;
+      break;
+    }
+  }
+  return [redrawText, redrawRings];
+}
+
 function drawSteps() {
-  if (drawingSteps) return;
-  drawingSteps = true;
   clearInfo();
+  var dims = getInfoDims();
   setSmallFont();
   g.setFontAlign(0,0);
   g.setColor(g.theme.fg);
-  g.drawString('STEPS ' + getSteps(), w/2, (3*h/4) - 4);
-  drawingSteps = false;
+  g.drawString((infoData[infoMode].calc().toUpperCase()), w/2, dims[0]);
 }
 
 /////////////////   GAUGE images /////////////////////////////////////
@@ -780,8 +799,14 @@ Bangle.on('step', s => {
   }
   idle = false;
   warned = 0;
-
-  if (infoMode == "ID_STEP") drawSteps();
+  if (drawingSteps) return;
+  var steps = getSteps();
+  ret = checkRedrawSteps(steps);
+  if (!ret[0] && !ret[1]) return;
+  drawingSteps = true;
+  if (ret[0]) drawSteps();
+  if (ret[1]) drawAllRings(new Date(), 'Steps');
+  drawingSteps = false;
 });
 
 function checkIdle() {
