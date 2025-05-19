@@ -14,7 +14,6 @@ const hyp = Math.sqrt(Math.pow(rad, 2) + Math.pow(rad, 2));
 // variable for controlling idle alert
 let lastStep = getTime();
 let warned = 0;
-let hourly_buzz_occurred = false;
 let idle = false;
 let IDLE_MINUTES = 26;
 
@@ -544,13 +543,8 @@ function drawClock() {
   }
   drawCount++;
 
-  if (settings.hourly_buzz) {
-    if (min != 0)
-      hourly_buzz_occurred = false;
-    else if (!hourly_buzz_occurred && isDaytime) {
+  if (settings.hourly_buzz && min == 0 && date.getSeconds() == 0 && isDaytime) {
       Bangle.buzz(150);
-      hourly_buzz_occurred = true;
-    }
   }
 }
 
