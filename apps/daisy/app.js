@@ -351,7 +351,7 @@ function getInfoDims() {
       line -= 7;
       break;
     case 3:
-      width -= 10;
+      width -= 9;
       height -= 6;
       line -= 10;
       break;
@@ -764,15 +764,26 @@ BUTTON.prototype.draw = function() {
   g.drawRect(this.x, this.y, (this.x + this.w), (this.y + this.h));
 };
 
+function redrawWholeFace() {
+  // Reset the prevRings to force all rings to update
+  prevRing = Array(3).fill().map(() => ({ start: null, end: null, max: null }));
+  g.clear();
+  draw(false);
+}
+
 function dismissPrompt() {
   idle = false;
   warned = false;
   lastStep = getTime();
   Bangle.buzz(100);
-  // Reset the prevRings to force all rings to update
-  prevRing = Array(3).fill().map(() => ({ start: null, end: null, max: null }));
-  g.clear();
-  draw(false);
+  redrawWholeFace();
+}
+
+function resetIdle() {
+  if (idle == false) return;
+   // redraw if we had been idle
+  dismissPrompt();
+  idle = false;
 }
 
 var dismissBtn = new BUTTON("big",0, 3*h/4 ,w, h/4, "#0ff", dismissPrompt, "Dismiss");
@@ -793,11 +804,7 @@ Bangle.on('touch', function(button, xy) {
 // if we get a step then we are not idle
 Bangle.on('step', s => {
   lastStep = getTime();
-  // redraw if we had been idle
-  if (idle == true) {
-    dismissPrompt();
-  }
-  idle = false;
+  resetIdle();
   warned = 0;
   if (drawingSteps) return;
   var steps = getSteps();
@@ -812,7 +819,7 @@ Bangle.on('step', s => {
 function checkIdle() {
   log_debug("checkIdle()");
   if (!settings.idle_check) {
-    idle = false;
+    resetIdle();
     warned = false;
     return;
   }
@@ -831,7 +838,7 @@ function checkIdle() {
     }
     idle = true;
   } else {
-    idle = false;
+    resetIdle();
     warned = 0;
   }
 }
@@ -942,10 +949,9 @@ var infoMode = infoList[settings.idxInfo];
 updateSunRiseSunSet(new Date(), location.lat, location.lon, true);
 nextUpdateMs = getDelayMs(1000, settings.rings, Date.now())[0];
 
-g.clear();
 Bangle.loadWidgets();
 /*
  * we are not drawing the widgets as we are taking over the whole screen
  */
 widget_utils.hide();
-draw(false);
+redrawWholeFace()
