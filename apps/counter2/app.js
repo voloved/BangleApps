@@ -85,13 +85,6 @@ Bangle.on('lock', e => {
   fastupdateoccurring = false;
 });
 
-Bangle.on("gesture", e => {
-  if (dragCurr.b) {
-    const c = (dragCurr.x >= halfwidth && s.display2) ? 1 : 0;
-    resetcounter(c);
-  }
-});
-
 Bangle.on("drag", e => {
   const c = (e.x >= halfwidth && s.display2) ? 1 : 0;
   dragCurr = e;
@@ -137,14 +130,23 @@ function fastupdatecounter(which) {
 
 
 function resetcounter(which) {
+  // If which is null, reset all
   fastupdateoccurring = false;
   if (dragtimeout) {
     let timeOutTimer = 1000;
     Bangle.setOptions({backlightTimeout: timeOutTimer, lockTimeout: timeOutTimer});
     clearTimeout(dragtimeout);
   }
-  counter[which] = defaults[which];
-  console.log("resetting counter ", which);
+  if (which == null) {
+    for (let iter = 0; iter < defaults.length; iter++) {
+      counter[iter] = defaults[iter];
+    }
+    console.log("resetting all counters");
+  }
+  else {
+    counter[which] = defaults[which];
+    console.log("resetting counter ", which);
+  }
   updateScreen();
   drag = undefined;
   ignoreonce = true;
@@ -154,6 +156,12 @@ function resetcounter(which) {
 updateScreen();
 
 setWatch(function() {
+  for (let which = 0; which < defaults.length; which++) {
+    if(counter[which] != defaults[which]) {
+      resetcounter(null);
+      return;
+    }
+  }
   var timeOutTimer = sGlob.timeout * 1000;
   Bangle.setOptions({backlightTimeout: timeOutTimer, lockTimeout: timeOutTimer});
   load();
