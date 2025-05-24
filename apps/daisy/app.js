@@ -24,8 +24,8 @@ var pals = Array(3).fill().map(() => (
 
 let palbg;
 const infoLineDefault = (3*h/4) - 6;
-const infoWidthDefault = 56;
-const infoHeightDefault = 11;
+const infoWidthDefault = 64;
+const infoHeightDefault = 8;
 const ringEdge = 4;
 const ringIterOffset = 10;
 const ringThick = 6;
@@ -34,6 +34,7 @@ const minStepPctUpdateRings = 3;  // If the current step is less percent than la
 let nextUpdateMs;
 var drawingSteps = false;
 var innerMostRing = 0;
+var outerMostRing = 0;
 var prevStepDisplayed = 0;
 var prevRing = Array(3).fill().map(() => ({ start: null, end: null, max: null }));
 
@@ -205,7 +206,20 @@ function loadSettings() {
     }
   }
 
+  getInnerOuterMostRing();
+  settings.color = settings.color||'Outer';
   settings.fg = settings.fg||'#0ff';
+  switch (settings.color) {
+    case 'Outer':
+      if (outerMostRing == 0) break;
+      settings.fg = settings.rings[outerMostRing - 1].fg;
+      break;
+    case 'Inner':
+      if (innerMostRing == 0) break;
+      settings.fg = settings.rings[innerMostRing - 1].fg;
+      break;
+  }
+
   settings.idle_check = (settings.idle_check === undefined ? true : settings.idle_check);
   settings.batt_hours = (settings.batt_hours === undefined ? false : settings.batt_hours);
   settings.hr_12 = (global_settings["12hour"] === undefined ? false : global_settings["12hour"]);
@@ -346,13 +360,13 @@ function getInfoDims() {
   var height = infoHeightDefault;
   switch (innerMostRing) {
     case 2:
-      width -= 8;
+      width -= 10;
       height -= 2;
       line -= 7;
       break;
     case 3:
-      width -= 9;
-      height -= 6;
+      width -= 17;
+      height -= 3;
       line -= 10;
       break;
   }
@@ -520,7 +534,7 @@ function drawClock() {
 
   g.reset();
   g.setColor(g.theme.bg);
-  innerMostRing = getInnerMostRing();
+  getInnerOuterMostRing();
   let edge = ringEdge + (innerMostRing * ringIterOffset);
   g.fillEllipse(edge+ringThick,edge+ringThick,w-edge-ringThick,h-edge-ringThick); // Clears the text within the circle
   drawAllRings(date, null);
@@ -908,15 +922,23 @@ function queueDraw() {
   }, delay);
 }
 
-function getInnerMostRing() {
-  var innerMost = 0;
-  for (let i = settings.rings.length - 1; i >= 0; i--) {
-  if (settings.rings[i].type !== "None") {
-    innerMost = i+1;
-    break;
+function getInnerOuterMostRing() {
+  let innerMost = 0;
+  let outerMost = 0;
+  for (let i = 0; i < settings.rings.length; i++) {
+    let j = settings.rings.length - 1 - i;
+    if (outerMost === 0 && settings.rings[i].type !== "None") {
+      outerMost = i + 1;
+    }
+    if (innerMost === 0 && settings.rings[j].type !== "None") {
+      innerMost = j + 1;
+    }
+    if (outerMost !== 0 && innerMost !== 0) {
+      break;
     }
   }
-  return innerMost;
+  innerMostRing = innerMost;
+  outerMostRing = outerMost;
 }
 
 // Stop updates when LCD is off, restart when on
@@ -944,7 +966,6 @@ Bangle.setUI("clockupdown", btn=> {
 
 loadSettings();
 loadLocation();
-innerMostRing = getInnerMostRing();
 var infoMode = infoList[settings.idxInfo];
 updateSunRiseSunSet(new Date(), location.lat, location.lon, true);
 nextUpdateMs = getDelayMs(1000, settings.rings, Date.now())[0];
@@ -954,4 +975,4 @@ Bangle.loadWidgets();
  * we are not drawing the widgets as we are taking over the whole screen
  */
 widget_utils.hide();
-redrawWholeFace()
+redrawWholeFace();

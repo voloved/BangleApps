@@ -1,9 +1,34 @@
 (function(back) {
   const SETTINGS_FILE = "daisy.json";
 
-  // default settings
-  let s = {
-    rings: [{}, {}, {}],
+  function getDefaultSettings() {
+  return {
+    rings: [
+      {
+        color: 'Cyan',
+        fg: '#0ff',
+        gy: '#022',
+        ring: 'Sun',
+        type: 'Full',
+        step_target: 10000,
+      },
+      {
+        color: 'Orange',
+        fg: '#ff0',
+        gy: '#220',
+        ring: 'Steps',
+        type: 'Semi',
+        step_target: 5000,
+      },
+      {
+        color: 'Blk/Wht',
+        fg: null,
+        gy: null,
+        ring: 'Hours',
+        type: 'C',
+        step_target: 10000,
+      }
+    ],
     color: 'Cyan',
     fg: '#0ff',
     check_idle: false,
@@ -11,34 +36,9 @@
     hourly_buzz: false,
     idxInfo: 0,
   };
+}
 
-  s.rings[0] = {
-    color: 'Cyan',
-    fg: '#0ff',
-    gy: '#022',
-    ring: 'Sun',
-    type: 'Full',
-    step_target: 10000,
-  };
-
-    s.rings[1] = {
-    color: 'Orange',
-    fg: '#ff0',
-    gy: '#220',
-    ring: 'Steps',
-    type: 'Semi',
-    step_target: 5000,
-  };
-
-    s.rings[2] = {
-    color: 'Blk/Wht',
-    fg: null,
-    gy: null,
-    ring: 'Hours',
-    type: 'C',
-    step_target: 10000,
-  };
-
+let s = getDefaultSettings();
 // ...and overwrite them with any saved values
 // This way saved values are preserved if a new version adds more settings
 const storage = require('Storage');
@@ -59,6 +59,8 @@ function save() {
   var ring_options = ['Hours', 'Minutes', 'Seconds', 'Day', 'Sun', 'Steps', 'Battery'];
   var ring_types = ['None', 'Full', 'Semi', 'C'];
   var step_options = [100, 1000, 5000, 10000, 15000, 20000];
+  var color_options_font = ['Outer', 'Inner'].concat(color_options);
+  var fg_code_font = [null, null].concat(color_options);
 
   function showRingMenu(ringIndex) {
     const ring = s.rings[ringIndex];
@@ -127,12 +129,12 @@ function save() {
       'Ring 2': () => showRingMenu(1),
       'Ring 3': () => showRingMenu(2),
       'Hour Color': {
-        value: 0 | color_options.indexOf(s.color),
-        min: 0, max: color_options.length - 1,
-        format: v => color_options[v],
+        value: 0 | color_options_font.indexOf(s.color),
+        min: 0, max: color_options_font.length - 1,
+        format: v => color_options_font[v],
         onchange: v => {
-          s.color = color_options[v];
-          s.fg = fg_code[v];
+          s.color = color_options_font[v];
+          s.fg = fg_code_font[v];
           save();
         },
       },
