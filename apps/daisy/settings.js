@@ -29,7 +29,7 @@
         step_target: 10000,
       }
     ],
-    color: 'Cyan',
+    color: 'Outer',
     fg: '#0ff',
     check_idle: false,
     batt_hours: false,
@@ -146,19 +146,29 @@ function save() {
           save();
         },
       },
-    'Hourly Buzz' : {
-      value: !!s.hourly_buzz,
-      onchange: v => {
-        s.hourly_buzz = v;
-        save();
+      'Hourly Buzz' : {
+        value: !!s.hourly_buzz,
+        onchange: v => {
+          s.hourly_buzz = v;
+          save();
+        },
       },
-    },
       'Idle Warning' : {
         value: !!s.idle_check,
         onchange: v => {
           s.idle_check = v;
           save();
         },
+      },
+      'Reset to Defaults': () => {
+        E.showPrompt("Reset all settings?\nThis cannot be undone.")
+          .then(confirm => {
+            if (confirm) {
+              s = getDefaultSettings();
+              save();
+              E.showAlert("Settings reset.").then(showMainMenu);
+            }
+          });
       },
     };
     E.showMenu(appMenu);
