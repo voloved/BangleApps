@@ -116,7 +116,7 @@ function save() {
             save();
           },
         };
-      };
+      }
     }
     E.showMenu(ringMenu);
   }
