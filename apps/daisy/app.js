@@ -540,6 +540,8 @@ function drawClock() {
   drawAllRings(date, null);
   setLargeFont();
 
+  if (settings.color == 'Fullest')
+    settings.fg = settings.rings[getFullestRing()].fg;
   g.setColor(settings.fg);
   g.setFontAlign(1,0);  // right aligned
   g.drawString(hh, (w/2) - 1, h/2);
@@ -923,6 +925,7 @@ function queueDraw() {
 }
 
 function getInnerOuterMostRing() {
+  // Outputs 1 through 3
   let innerMost = 0;
   let outerMost = 0;
   for (let i = 0; i < settings.rings.length; i++) {
@@ -939,6 +942,22 @@ function getInnerOuterMostRing() {
   }
   innerMostRing = innerMost;
   outerMostRing = outerMost;
+}
+
+function getFullestRing() {
+  // Outputs 0 through 2
+  let largestPercent = 0;
+  let fullestRing = 0;
+  for (let i = 0; i < settings.rings.length; i++) {
+    if (settings.rings[i].type !== "None") {
+      let percent = (prevRing[i].end - prevRing[i].start) / prevRing[i].max;
+      if (largestPercent < percent) {
+        largestPercent = percent;
+        fullestRing = i;
+      }
+    }
+  }
+  return fullestRing;
 }
 
 // Stop updates when LCD is off, restart when on
