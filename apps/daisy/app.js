@@ -432,6 +432,9 @@ function drawHour(date) {
   if (settings.color == 'Fullest') {
     settings.fg = settings.rings[getFullestRing()].fg;
   }
+  else if (settings.color == 'Emptiest') {
+    settings.fg = settings.rings[getEmptiestRing()].fg;
+  }
   g.setColor(settings.fg);
   g.setFontAlign(1,0);  // right aligned
   g.drawString(hh, (w/2) - 1, h/2);
@@ -442,8 +445,12 @@ function draw(updateSeconds) {
     if (updateSeconds) {
       let date  = new Date();
       drawAllRings(date, 'Seconds');
-      if (settings.color == 'Fullest') {
-        let fgNew = settings.rings[getFullestRing()].fg;
+      if (["Fullest", "Emptiest"].includes(settings.color)) {
+        let fgNew;
+        if (settings.color == 'Fullest')
+          fgNew = settings.rings[getFullestRing()].fg;
+        else if (settings.color == 'Emptiest')
+          fgNew = settings.rings[getEmptiestRing()].fg;
         if (settings.fg != fgNew) {
           setLargeFont();
           drawHour(date);
@@ -971,6 +978,22 @@ function getFullestRing() {
     }
   }
   return fullestRing;
+}
+
+function getEmptiestRing() {
+  // Outputs 0 through 2
+  let smallestPercent = Infinity;
+  let emptiestRing = 0;
+  for (let i = settings.rings.length - 1; i >= 0; i--) {
+    if (settings.rings[i].type !== "None") {
+      let percent = (prevRing[i].end - prevRing[i].start) / prevRing[i].max;
+      if (smallestPercent > percent) {
+        smallestPercent = percent;
+        emptiestRing = i;
+      }
+    }
+  }
+  return emptiestRing;
 }
 
 // Stop updates when LCD is off, restart when on
