@@ -222,12 +222,6 @@ module.exports = {
       "no-unused-vars"
     ]
   },
-  "apps/powermanager/boot.js": {
-    "hash": "662d9d29a80a4f2c2855097b4073a099604f4f6d444c13a33304346c788cc5cb",
-    "rules": [
-      "no-unused-vars"
-    ]
-  },
   "apps/ohmcalc/app.js": {
     "hash": "c7bdea47cb54ec00335d44968f1a4bb1869786584e247739828930b97e60b963",
     "rules": [
@@ -355,18 +349,6 @@ module.exports = {
   },
   "apps/devstopwatch/app.js": {
     "hash": "28ca59e605f280a2d8fd4a74f553783205d51f8bb7042d6f51cf8ec11d44c264",
-    "rules": [
-      "no-unused-vars"
-    ]
-  },
-  "apps/coretemp/settings.js": {
-    "hash": "b5aa84ecab587b444028b4491b2c2e8f3b2303aa33745265ab629c6ff5141cfb",
-    "rules": [
-      "no-unused-vars"
-    ]
-  },
-  "apps/coretemp/boot.js": {
-    "hash": "02ee3a04d7dc485367394a91e570affd712ab919bbb155bdafc00e534d3bcd4a",
     "rules": [
       "no-unused-vars"
     ]
@@ -937,12 +919,6 @@ module.exports = {
       "no-undef"
     ]
   },
-  "apps/fileman/fileman.app.js": {
-    "hash": "f378179e7dd3655ba7e9ce03e1f7fd5a2d1768ad7d9083b22e7d740405be842a",
-    "rules": [
-      "no-undef"
-    ]
-  },
   "apps/flappy/app.js": {
     "hash": "e24b0c5e0469070e02dae00887bf50569c2c141a80c7c356b36987ddf68ce9cc",
     "rules": [
@@ -981,12 +957,6 @@ module.exports = {
   },
   "apps/cprassist/cprassist.js": {
     "hash": "647f0a1b3dc52466079049a68c27448c18693df8deb1eb8e04ff84fcb93c323e",
-    "rules": [
-      "no-undef"
-    ]
-  },
-  "apps/coretemp/coretemp.js": {
-    "hash": "7230802388f9cbb7026ce0e94ced6656dc79a411ef7740279ec82eb4fc892d48",
     "rules": [
       "no-undef"
     ]
@@ -1065,12 +1035,6 @@ module.exports = {
   },
   "apps/approxclock/app.js": {
     "hash": "675ce5f16bb26649a39c86561e9fa46bb31e369a465fac9b35e5debfe18672ec",
-    "rules": [
-      "no-undef"
-    ]
-  },
-  "apps/altimeter/app.js": {
-    "hash": "054ac328db51034aa339f1d10b4d264badd49438b95f08bc6fbfb90bd88c6ae0",
     "rules": [
       "no-undef"
     ]
