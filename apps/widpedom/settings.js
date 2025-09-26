@@ -56,6 +56,15 @@
         save();
       },
     },
+    'Reset Steps': {
+      value: false,
+      format: v => '',
+      onchange: () => {
+        if (WIDGETS && WIDGETS["wpedom"] && typeof WIDGETS["wpedom"].resetSteps === "function") {
+          WIDGETS["wpedom"].resetSteps();
+        }
+      }
+    },
     '< Back': back,
   })
 })

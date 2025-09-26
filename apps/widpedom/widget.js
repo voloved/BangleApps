@@ -130,7 +130,17 @@
       loadSettings();
       WIDGETS["wpedom"].redraw();
     },
-    getSteps:()=>stp_today
+    getSteps:()=>stp_today,
+    resetSteps: function() {
+      stp_today = 0;
+      lastUpdate = new Date();
+      require("Storage").writeJSON("wpedom.json",{
+        lastUpdate : lastUpdate.valueOf(),
+        stepsToday : stp_today,
+        settings   : settings,
+      });
+      this.redraw();
+    }
   };
   // Load data at startup
   let pedomData = loadSettings();
